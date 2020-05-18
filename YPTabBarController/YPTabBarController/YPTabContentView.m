@@ -627,9 +627,6 @@ tabBarStopOnTopHeight:(CGFloat)tabBarStopOnTopHeight
             controller.view.frame = frame;
         }
         if (controller.isViewLoaded && !controller.view.superview) {
-            if (self.delegate && [self.delegate respondsToSelector:@selector(tabContentView:willSelectTabAtIndex:)]) {
-                [self.delegate tabContentView:self willSelectTabAtIndex:index];
-            }
             [self.contentScrollView addSubview:controller.view];
         }
     }
