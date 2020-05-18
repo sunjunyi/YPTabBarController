@@ -117,14 +117,11 @@
         if (self.imageSelectedColor) {
             self.imageView.tintColor = self.imageSelectedColor;
         }
-        self.layer.borderColor = self.borderSelectedColor.CGColor;
-        self.backgroundColor = self.bgSelectedColor;
+
     } else {
         if (self.imageColor) {
             self.imageView.tintColor = self.imageColor;
         }
-        self.layer.borderColor = self.borderColor.CGColor;
-        self.backgroundColor = self.bgColor;
     }
 }
 
