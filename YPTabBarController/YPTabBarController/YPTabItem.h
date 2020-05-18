@@ -14,6 +14,7 @@
 typedef NS_ENUM(NSInteger, YPTabItemBadgeStyle) {
     YPTabItemBadgeStyleNumber = 0, // 数字样式
     YPTabItemBadgeStyleDot = 1, // 小圆点
+    YPTabItemBadgeStyleCustom = 2 //自定义
 };
 
 @interface YPTabItem : UIButton
@@ -35,8 +36,18 @@ typedef NS_ENUM(NSInteger, YPTabItemBadgeStyle) {
 @property (nonatomic, strong) UIColor *titleSelectedColor;
 @property (nonatomic, strong) UIFont *titleFont;
 
+@property (nonatomic, assign) BOOL needCorner;
+@property (nonatomic, strong) UIColor *borderColor;
+@property (nonatomic, strong) UIColor *borderSelectedColor;
+@property (nonatomic, assign) NSInteger borderwidth;
+@property (nonatomic, strong) UIColor *bgColor;
+@property (nonatomic, strong) UIColor *bgSelectedColor;
+
+
 @property (nonatomic, strong) UIImage *image;
 @property (nonatomic, strong) UIImage *selectedImage;
+@property (nonatomic, strong) UIColor *imageColor;
+@property (nonatomic, strong) UIColor *imageSelectedColor;
 
 @property (nonatomic, assign, readonly) CGFloat titleWidth;
 @property (nonatomic, assign) UIEdgeInsets indicatorInsets;
@@ -78,7 +89,7 @@ typedef NS_ENUM(NSInteger, YPTabItemBadgeStyle) {
 /**
  *  设置Image和Title水平居中
  */
-@property (nonatomic, assign, getter = isContentHorizontalCenter) BOOL contentHorizontalCenter;
+@property (nonatomic, assign) BOOL contentHorizontalCenter;
 
 /**
  *  设置Image和Title水平居中

@@ -113,6 +113,19 @@
     if (self.doubleTapView) {
         self.doubleTapView.hidden = !selected;
     }
+    if (self.selected) {
+        if (self.imageSelectedColor) {
+            self.imageView.tintColor = self.imageSelectedColor;
+        }
+        self.layer.borderColor = self.borderSelectedColor.CGColor;
+        self.backgroundColor = self.bgSelectedColor;
+    } else {
+        if (self.imageColor) {
+            self.imageView.tintColor = self.imageColor;
+        }
+        self.layer.borderColor = self.borderColor.CGColor;
+        self.backgroundColor = self.bgColor;
+    }
 }
 
 - (void)setDoubleTapHandler:(void (^)(void))handler {
@@ -142,6 +155,14 @@
     [self updateBadge];
     [self calculateIndicatorFrame];
     [self updateFrameOfSubviews];
+    
+    if (_needCorner) {
+        self.layer.cornerRadius = frame.size.height * 0.5;
+        self.layer.masksToBounds = YES;
+        self.layer.borderColor = self.borderColor.CGColor;
+        self.layer.borderWidth = self.borderwidth;
+    }
+    
 }
 
 - (CGSize)size {
@@ -155,6 +176,39 @@
 }
 
 #pragma mark - Title and Image
+
+
+-(void)setNeedCorner:(BOOL)needCorner{
+    _needCorner = needCorner;
+}
+
+-(void)setBorderColor:(UIColor *)borderColor{
+    _borderColor = borderColor;
+    if (_needCorner) {
+        self.layer.borderColor = borderColor.CGColor;
+    }
+}
+
+-(void)setBorderSelectedColor:(UIColor *)borderSelectedColor{
+    _borderSelectedColor = borderSelectedColor;
+}
+
+-(void)setBorderwidth:(NSInteger)borderwidth{
+    _borderwidth = borderwidth;
+    if (_needCorner) {
+        self.layer.borderWidth = borderwidth;
+    }
+}
+
+-(void)setBgColor:(UIColor *)bgColor{
+    _bgColor = bgColor;
+    self.backgroundColor = bgColor;
+}
+-(void)setBgSelectedColor:(UIColor *)bgSelectedColor{
+    _bgSelectedColor = bgSelectedColor;
+}
+
+
 
 - (void)setTitle:(NSString *)title {
     _title = title;
@@ -178,6 +232,20 @@
         self.titleLabel.font = titleFont;
     }
     [self calculateTitleWidth];
+}
+
+- (void)setImageColor:(UIColor *)imageColor {
+    _imageColor = imageColor;
+    if (!self.selected) {
+        self.imageView.tintColor = imageColor;
+    }
+}
+
+- (void)setImageSelectedColor:(UIColor *)imageSelectedColor {
+    _imageSelectedColor = imageSelectedColor;
+    if (self.selected) {
+        self.imageView.tintColor = imageSelectedColor;
+    }
 }
 
 - (void)calculateTitleWidth {
@@ -268,6 +336,17 @@
                                             self.dotBadgeSideLength,
                                             self.dotBadgeSideLength);
         self.badgeButton.layer.cornerRadius = self.badgeButton.bounds.size.height / 2;
+        self.badgeButton.hidden = NO;
+    }else if (self.badgeStyle == YPTabItemBadgeStyleCustom) {
+        [self.badgeButton setTitle: nil forState:UIControlStateNormal];
+        [self.badgeButton setImage:self.badgeBackgroundImage forState:UIControlStateNormal];
+        [self.badgeButton setBackgroundImage:nil forState:UIControlStateNormal];
+        
+        self.badgeButton.frame = CGRectMake(self.bounds.size.width - self.dotBadgeCenterMarginRight - self.dotBadgeSideLength,
+                                            self.dotBadgeMarginTop,
+                                            self.dotBadgeSideLength,
+                                            self.dotBadgeSideLength * 6.0 / 9.0);
+//        self.badgeButton.layer.cornerRadius = self.badgeButton.bounds.size.height / 2;
         self.badgeButton.hidden = NO;
     }
 }

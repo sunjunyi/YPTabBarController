@@ -33,6 +33,7 @@
 
 @property (nonatomic, assign) BOOL interceptLeftSlideGuetureInLastPage;
 @property (nonatomic, assign) BOOL interceptRightSlideGuetureInFirstPage;
+@property (nonatomic, assign) CGFloat interceptRightSlideGuetureMaxAllowedDistance;
 
 @end
 
@@ -100,7 +101,7 @@ typedef void (^_YPViewControllerWillAppearInjectBlock)(UIViewController *viewCon
 @interface YPTabContentView () <UIScrollViewDelegate, UITableViewDelegate, UITableViewDataSource, _YPTabContentScrollViewDelegate> {
     
     CGFloat _lastContentScrollViewOffsetX;
-    CGFloat _currentScrollViewOffsetY;
+    NSUInteger _lastCenterIndex;
 }
 
 @property (nonatomic, strong) _YPTabContentScrollView *contentScrollView;
@@ -236,6 +237,11 @@ typedef void (^_YPViewControllerWillAppearInjectBlock)(UIViewController *viewCon
     self.contentSwitchAnimated = animated;
 }
 
+- (void)setContentScrollEnabled:(BOOL)enabled {
+    _contentScrollEnabled = enabled;
+    self.tabBar.autoScrollSelectedItemToCenter = !enabled;
+}
+
 - (void)updateContentViewsFrame {
     if (self.contentScrollEnabled) {
         self.contentScrollView.contentSize = CGSizeMake(self.contentScrollView.bounds.size.width * self.viewControllers.count, self.contentScrollView.bounds.size.height);
@@ -267,6 +273,11 @@ typedef void (^_YPViewControllerWillAppearInjectBlock)(UIViewController *viewCon
 - (void)setInterceptLeftSlideGuetureInLastPage:(BOOL)interceptLeftSlideGuetureInLastPage {
     _interceptLeftSlideGuetureInLastPage = interceptLeftSlideGuetureInLastPage;
     self.contentScrollView.interceptLeftSlideGuetureInLastPage = interceptLeftSlideGuetureInLastPage;
+}
+
+- (void)setInterceptRightSlideGuetureMaxAllowedDistance:(CGFloat)interceptRightSlideGuetureMaxAllowedDistance {
+    _interceptRightSlideGuetureMaxAllowedDistance = interceptRightSlideGuetureMaxAllowedDistance;
+    self.contentScrollView.interceptRightSlideGuetureMaxAllowedDistance = interceptRightSlideGuetureMaxAllowedDistance;
 }
 
 - (void)setSelectedTabIndex:(NSUInteger)selectedTabIndex {
@@ -338,6 +349,9 @@ tabBarStopOnTopHeight:(CGFloat)tabBarStopOnTopHeight
     
     [self.contentScrollView removeFromSuperview];
     
+    [self.containerTableView removeFromSuperview];
+    self.containerTableView = nil;
+    
     self.containerTableView = [[YPContainerTableView alloc] initWithFrame:self.bounds style:UITableViewStylePlain];
     self.containerTableView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     self.containerTableView.delegate = self;
@@ -368,6 +382,7 @@ tabBarStopOnTopHeight:(CGFloat)tabBarStopOnTopHeight
     
     self.canContentScroll = YES;
     self.canChildScroll = NO;
+    self.frame = frame;
 }
 
 - (void)containerTableViewDidScroll:(UIScrollView *)scrollView {
@@ -548,6 +563,16 @@ tabBarStopOnTopHeight:(CGFloat)tabBarStopOnTopHeight
         [self containerTableViewDidScroll:scrollView];
         return;
     }
+    
+    if (self.tabBar.scrollEnabled) {
+        CGRect visibleBounds = self.contentScrollView.bounds;
+        NSInteger index = (NSInteger)(floorf(CGRectGetMidX(visibleBounds) / CGRectGetWidth(visibleBounds)));
+        if (index >= 0 && _lastCenterIndex != index) {
+            [self.tabBar scrollItemToCenterWithIndex:index animated:YES];
+            _lastCenterIndex = index;
+        }
+    }
+    
     // 如果不是手势拖动导致的此方法被调用，不处理
     if (!(scrollView.isDragging || scrollView.isDecelerating)) {
         if (scrollView.contentOffset.x == 0) {
@@ -602,6 +627,9 @@ tabBarStopOnTopHeight:(CGFloat)tabBarStopOnTopHeight
             controller.view.frame = frame;
         }
         if (controller.isViewLoaded && !controller.view.superview) {
+            if (self.delegate && [self.delegate respondsToSelector:@selector(tabContentView:willSelectTabAtIndex:)]) {
+                [self.delegate tabContentView:self willSelectTabAtIndex:index];
+            }
             [self.contentScrollView addSubview:controller.view];
         }
     }
@@ -640,6 +668,14 @@ tabBarStopOnTopHeight:(CGFloat)tabBarStopOnTopHeight
         targetIndex = currentIndex - 1;
     } else {
         targetIndex = currentIndex + 1;
+    }
+    
+    // Ignore when the beginning location is beyond max allowed initial distance to left edge.
+    CGPoint beginningLocation = [gestureRecognizer locationInView:gestureRecognizer.view];
+    CGFloat maxAllowedInitialDistance = self.interceptRightSlideGuetureMaxAllowedDistance;
+    int x = (int)beginningLocation.x % (int)self.frame.size.width;
+    if (maxAllowedInitialDistance > 0 && x < maxAllowedInitialDistance) {
+        return NO;
     }
     
     // 第一页往右滑动

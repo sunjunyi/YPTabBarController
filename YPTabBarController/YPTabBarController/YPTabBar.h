@@ -54,6 +54,9 @@ typedef NS_ENUM(NSInteger, YPTabBarIndicatorAnimationStyle) {
 @property (nonatomic, strong) UIFont  *itemTitleFont;               // 标题字体
 @property (nonatomic, strong) UIFont  *itemTitleSelectedFont;       // 选中时标题的字体
 
+@property (nonatomic, strong) UIColor *itemImageColor;
+@property (nonatomic, strong) UIColor *itemImageSelectedColor;
+
 @property (nonatomic, strong) UIColor *badgeBackgroundColor;        // Badge背景颜色
 @property (nonatomic, strong) UIImage *badgeBackgroundImage;        // Badge背景图像
 @property (nonatomic, strong) UIColor *badgeTitleColor;             // Badge标题颜色
@@ -64,25 +67,42 @@ typedef NS_ENUM(NSInteger, YPTabBarIndicatorAnimationStyle) {
 
 @property (nonatomic, assign) NSUInteger selectedItemIndex;          // 选中某一个item
 
+@property (nonatomic, assign) BOOL needCorner;                  //是否需要圆角
+@property (nonatomic, assign) CGFloat itemHSpace;               //item水平之间的间距
+@property (nonatomic, assign) CGFloat itemHOriginY;             //每个item的默认y
+@property (nonatomic, strong) UIColor *borderColor;             //圆角border颜色
+@property (nonatomic, strong) UIColor *borderSelectedColor;     //圆角border选中的颜色
+@property (nonatomic, assign) CGFloat borderwidth;              //圆角border宽度
+@property (nonatomic, strong) UIColor *bgColor;                 //背景颜色
+@property (nonatomic, strong) UIColor *bgSelectedColor;         //选中的背景颜色
+
+
 /**
  *  拖动内容视图时，item的颜色是否根据拖动位置显示渐变效果，默认为YES
  */
-@property (nonatomic, assign, getter = isItemColorChangeFollowContentScroll) BOOL itemColorChangeFollowContentScroll;
+@property (nonatomic, assign) BOOL itemColorChangeFollowContentScroll;
 
 /**
  *  拖动内容视图时，item的字体是否根据拖动位置显示渐变效果，默认为NO
  */
-@property (nonatomic, assign, getter = isItemFontChangeFollowContentScroll) BOOL itemFontChangeFollowContentScroll;
+@property (nonatomic, assign) BOOL itemFontChangeFollowContentScroll;
 
 /**
  *  TabItem的选中背景是否随contentView滑动而移动
  */
-@property (nonatomic, assign, getter = isIndicatorScrollFollowContent) BOOL indicatorScrollFollowContent;
+@property (nonatomic, assign) BOOL indicatorScrollFollowContent;
+
+/**
+ *  选中tab后，选中tab是否自动居中
+ */
+@property (nonatomic, assign) BOOL autoScrollSelectedItemToCenter;
+
+@property (nonatomic, assign, readonly) BOOL scrollEnabled;
 
 /**
  *  将Image和Title设置为水平居中，默认为YES
  */
-@property (nonatomic, assign, getter = isItemContentHorizontalCenter) BOOL itemContentHorizontalCenter;
+@property (nonatomic, assign) BOOL itemContentHorizontalCenter;
 
 /**
  *  TabItem选中切换时，指示器是否有动画
@@ -114,6 +134,11 @@ typedef NS_ENUM(NSInteger, YPTabBarIndicatorAnimationStyle) {
 - (void)setSelectedItemIndex:(NSUInteger)selectedItemIndex
                     animated:(BOOL)animated
                 callDelegate:(BOOL)callDelegate;
+
+/**
+ *  设置某个item在页面中居中
+ */
+- (void)scrollItemToCenterWithIndex:(NSUInteger)index animated:(BOOL)animated;
 
 /**
  *  设置tabBar为竖向且支持滚动，tabItem的高度根据tabBar高度和leadingSpace、trailingSpace属性计算

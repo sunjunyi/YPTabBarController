@@ -95,6 +95,7 @@ typedef NS_ENUM(NSInteger, YPTabBarIndicatorStyle) {
     _itemContentHorizontalCenter = YES;
     _itemFontChangeFollowContentScroll = NO;
     _itemColorChangeFollowContentScroll = YES;
+    _autoScrollSelectedItemToCenter = YES;
     _indicatorScrollFollowContent = NO;
     
     _badgeTitleColor = [UIColor whiteColor];
@@ -147,9 +148,25 @@ typedef NS_ENUM(NSInteger, YPTabBarIndicatorStyle) {
         item.titleSelectedColor = self.itemTitleSelectedColor;
         item.titleFont = self.itemTitleFont;
         
+        if (self.itemImageColor) {
+            item.imageColor = self.itemImageColor;
+        }
+        if (self.itemImageSelectedColor) {
+            item.imageSelectedColor = self.itemImageSelectedColor;
+        }
+        
         if ([item imageForState:UIControlStateNormal]) {
             [item setContentHorizontalCenterAndMarginTop:5 spacing:5];
         }
+        
+        
+        item.needCorner = self.needCorner;
+        item.borderColor = self.borderColor;
+        item.borderwidth = self.borderwidth;
+        item.borderSelectedColor = self.borderSelectedColor;
+        item.bgColor = self.bgColor;
+        item.bgSelectedColor = self.bgSelectedColor;
+        
         
         item.badgeTitleFont = self.badgeTitleFont;
         item.badgeTitleColor = self.badgeTitleColor;
@@ -233,17 +250,18 @@ typedef NS_ENUM(NSInteger, YPTabBarIndicatorStyle) {
                 if (self.itemFitTextWidth) {
                     width = MAX(item.titleWidth + self.itemFitTextWidthSpacing, self.itemMinWidth);
                 }
-                item.frame = CGRectMake(x, 0, width, self.frame.size.height);
+                item.frame = CGRectMake(x, self.itemHOriginY, width, self.frame.size.height - self.itemHOriginY * 2);
                 item.index = index;
-                x += width;
+                x += width + self.itemHSpace;
             }
+            x -= self.itemHSpace;
             self.scrollView.contentSize = CGSizeMake(MAX(x + self.trailingSpace, self.scrollView.frame.size.width),
                                                      self.scrollView.frame.size.height);
         } else {
             // 不支持滚动
             
             CGFloat x = self.leadingSpace;
-            CGFloat allItemsWidth = self.frame.size.width - self.leadingSpace - self.trailingSpace;
+            CGFloat allItemsWidth = self.frame.size.width - self.leadingSpace - self.trailingSpace - (self.items.count - 1) * self.itemHSpace;
             if (self.specialItem && self.specialItem.frame.size.width != 0) {
                 self.itemWidth = (allItemsWidth - self.specialItem.frame.size.width) / self.items.count;
             } else {
@@ -255,10 +273,10 @@ typedef NS_ENUM(NSInteger, YPTabBarIndicatorStyle) {
             
             for (NSUInteger index = 0; index < self.items.count; index++) {
                 YPTabItem *item = self.items[index];
-                item.frame = CGRectMake(x, 0, self.itemWidth, self.frame.size.height);
+                item.frame = CGRectMake(x, self.itemHOriginY, self.itemWidth, self.frame.size.height - self.itemHOriginY * 2);
                 item.index = index;
                 
-                x += self.itemWidth;
+                x += self.itemWidth + self.itemHSpace;
                 
                 // 如果有特殊的单独item，设置其位置
                 if (self.specialItem && self.specialItem.index == index) {
@@ -355,11 +373,41 @@ typedef NS_ENUM(NSInteger, YPTabBarIndicatorStyle) {
     _selectedItemIndex = selectedItemIndex;
     
     // 如果tabbar支持滚动，将选中的item放到tabbar的中央
-    [self setSelectedItemCenter];
+    if (self.autoScrollSelectedItemToCenter) {
+        [self scrollItemToCenterWithIndex:selectedItemIndex animated:YES];
+    }
     
     if (callDelegate && self.delegate && [self.delegate respondsToSelector:@selector(yp_tabBar:didSelectedItemAtIndex:)]) {
         [self.delegate yp_tabBar:self didSelectedItemAtIndex:selectedItemIndex];
     }
+}
+
+- (void)scrollItemToCenterWithIndex:(NSUInteger)index animated:(BOOL)animated {
+    if (index < 0) {
+        return;
+    }
+    if (!self.scrollView.scrollEnabled || self.isVertical) {
+        return;
+    }
+    YPTabItem *item = self.items[index];
+    // 修改偏移量
+    CGFloat offsetX = item.center.x - self.scrollView.frame.size.width * 0.5f;
+    
+    // 处理最小滚动偏移量
+    if (offsetX < 0) {
+        offsetX = 0;
+    }
+    
+    // 处理最大滚动偏移量
+    CGFloat maxOffsetX = self.scrollView.contentSize.width - self.scrollView.frame.size.width;
+    if (offsetX > maxOffsetX) {
+        offsetX = maxOffsetX;
+    }
+    [self.scrollView setContentOffset:CGPointMake(offsetX, 0) animated:animated];
+}
+
+- (BOOL)scrollEnabled {
+    return self.scrollView.scrollEnabled;
 }
 
 - (void)setScrollEnabledAndItemWidth:(CGFloat)width {
@@ -402,27 +450,6 @@ typedef NS_ENUM(NSInteger, YPTabBarIndicatorStyle) {
     self.itemHeight = height;
     [self updateAllUI];
 }
-
-- (void)setSelectedItemCenter {
-    if (!self.scrollView.scrollEnabled || self.isVertical) {
-        return;
-    }
-    // 修改偏移量
-    CGFloat offsetX = self.selectedItem.center.x - self.scrollView.frame.size.width * 0.5f;
-    
-    // 处理最小滚动偏移量
-    if (offsetX < 0) {
-        offsetX = 0;
-    }
-    
-    // 处理最大滚动偏移量
-    CGFloat maxOffsetX = self.scrollView.contentSize.width - self.scrollView.frame.size.width;
-    if (offsetX > maxOffsetX) {
-        offsetX = maxOffsetX;
-    }
-    [self.scrollView setContentOffset:CGPointMake(offsetX, 0) animated:YES];
-}
-
 
 /**
  *  获取未选中字体与选中字体大小的比例
@@ -585,6 +612,16 @@ typedef NS_ENUM(NSInteger, YPTabBarIndicatorStyle) {
     [self updateItemsScaleIfNeeded];
 }
 
+- (void)setItemImageColor:(UIColor *)itemImageColor {
+    _itemImageColor = itemImageColor;
+    [self.items makeObjectsPerformSelector:@selector(setImageColor:) withObject:itemImageColor];
+}
+
+- (void)setItemImageSelectedColor:(UIColor *)itemImageSelectedColor {
+    _itemImageSelectedColor = itemImageSelectedColor;
+    [self.items makeObjectsPerformSelector:@selector(setImageSelectedColor:) withObject:itemImageSelectedColor];
+}
+
 - (void)setItemFontChangeFollowContentScroll:(BOOL)itemFontChangeFollowContentScroll {
     _itemFontChangeFollowContentScroll = itemFontChangeFollowContentScroll;
     [self updateItemsScaleIfNeeded];
@@ -728,7 +765,7 @@ typedef NS_ENUM(NSInteger, YPTabBarIndicatorStyle) {
                                              self.bounds.size.width - self.itemSeparatorLeading - self.itemSeparatorTrailing,
                                              self.itemSeparatorThickness);
                 } else {
-                    layer.frame = CGRectMake(item.frame.origin.x - self.itemSeparatorThickness / 2,
+                    layer.frame = CGRectMake(item.frame.origin.x - self.itemHSpace * 0.5 - self.itemSeparatorThickness / 2,
                                              self.itemSeparatorLeading,
                                              self.itemSeparatorThickness,
                                              self.bounds.size.height - self.itemSeparatorLeading - self.itemSeparatorTrailing);
