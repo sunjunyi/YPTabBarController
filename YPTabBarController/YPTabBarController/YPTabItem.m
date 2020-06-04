@@ -342,7 +342,7 @@
         [self.badgeButton setImage:self.badgeBackgroundImage forState:UIControlStateNormal];
         [self.badgeButton setBackgroundImage:nil forState:UIControlStateNormal];
         
-        self.badgeButton.frame = CGRectMake(self.bounds.size.width - self.dotBadgeCenterMarginRight - self.dotBadgeSideLength,
+        self.badgeButton.frame = CGRectMake(self.bounds.size.width * 0.5 + self.titleWidth * 0.5,
                                             self.dotBadgeMarginTop,
                                             self.dotBadgeSideLength,
                                             self.dotBadgeSideLength * 6.0 / 9.0);

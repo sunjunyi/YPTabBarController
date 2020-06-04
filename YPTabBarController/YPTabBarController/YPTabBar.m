@@ -362,6 +362,11 @@ typedef NS_ENUM(NSInteger, YPTabBarIndicatorStyle) {
         newSelectedItem.titleFont = self.itemTitleSelectedFont;
     }
     
+    if (!self.itemFontChangeFollowContentScroll && [self itemTitleUnselectedFontScale] != 1.0) {
+        [self updateItemsFrame];
+        [self updateItemIndicatorInsets];
+    }
+    
     if (animated && _selectedItemIndex != NSNotFound) {
         [UIView animateWithDuration:0.25f animations:^{
             [self updateIndicatorFrameWithIndex:selectedItemIndex];
@@ -810,6 +815,8 @@ typedef NS_ENUM(NSInteger, YPTabBarIndicatorStyle) {
         // 根据偏移量和差值，计算缩放值
         leftItem.transform = CGAffineTransformMakeScale(rightScale * diff + 1, rightScale * diff + 1);
         rightItem.transform = CGAffineTransformMakeScale(leftScale * diff + 1, leftScale * diff + 1);
+    }else{
+        [self updateItemsFrame];
     }
     
     if (self.itemColorChangeFollowContentScroll) {
